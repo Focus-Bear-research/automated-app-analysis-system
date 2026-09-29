@@ -6,6 +6,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
+import json
 
 # -----------------------------------------------------------
 # PAGE CONFIGURATION
@@ -111,7 +112,7 @@ div[role='radiogroup'] label[data-selected="true"] p {
 st.sidebar.markdown("<div class='sidebar-header'>Focus Bear</div>", unsafe_allow_html=True)
 menu = st.sidebar.radio(
     "Navigation",
-    ["Overview", "Competitors", "Sentiment Analysis", "Feature Matrix", "ADHD Analysis", "Summary", "Survivorship Analysis"],
+    ["Overview", "Competitors", "Sentiment Analysis", "Feature Matrix", "ADHD Analysis","Why Users Leave Competitors", "Summary", "Survivorship Analysis"],
     index=0
 )
 
@@ -1081,9 +1082,62 @@ elif menu == "ADHD Analysis":
     🔹 Users often mention focus, concentration, and improvement when describing ADHD benefits.
     """)
 
+# -----------------------------------------------------------
+# Why users leave competitors
+# -----------------------------------------------------------
 
-
-
+elif menu == "Why Users Leave Competitors":
+    st.header("📉 Why Users Leave Competitors")
+    st.write("Detailed analysis of negative reviews and complaint themes from competitors to identify product opportunities and retention gaps.")
+    
+    report_path = 'data/curated/competitor_complaints_summary.csv'
+    
+    if os.path.exists(report_path):
+        df_summary = pd.read_csv(report_path)
+        
+        # 1. Filter dropdown by complaint theme
+        theme_options = ["All"] + list(df_summary['complaint_themes'].unique())
+        selected_theme = st.selectbox("Filter by Complaint Theme:", options=theme_options)
+        
+        if selected_theme != "All":
+            df_filtered = df_summary[df_summary['complaint_themes'] == selected_theme]
+        else:
+            df_filtered = df_summary
+            
+        st.dataframe(df_filtered, use_container_width=True)
+        
+        # 2. Visualize overall complaint frequencies across themes
+        st.subheader("📊 Complaint Theme Frequencies")
+        theme_grouped = df_summary.groupby('complaint_themes')['complaint_count'].sum().reset_index()
+        
+        import altair as chart_lib
+        
+        chart = chart_lib.Chart(theme_grouped).mark_bar().encode(
+            x=chart_lib.X('complaint_themes:N', sort='-y', title='Complaint Themes', axis=chart_lib.Axis(labelAngle=0)),
+            y=chart_lib.Y('complaint_count:Q', title='Complaint Count'),
+            tooltip=['complaint_themes', 'complaint_count']
+        ).properties(height=400)
+        
+        st.altair_chart(chart, use_container_width=True)
+        
+        # 3. Display Example Quotes per Theme for qualitative insight
+        st.subheader("💬 Representative User Quotes")
+        chosen_theme_for_quotes = st.selectbox("Select Theme to View Example Quotes:", options=df_summary['complaint_themes'].unique())
+        
+        subset_theme = df_summary[df_summary['complaint_themes'] == chosen_theme_for_quotes]
+        if not subset_theme.empty and 'example_quotes' in subset_theme.columns:
+            raw_quotes = subset_theme.iloc[0]['example_quotes']
+            try:
+                quotes_list = json.loads(raw_quotes)
+                if quotes_list:
+                    for idx, q in enumerate(quotes_list, 1):
+                        st.info(f"**Quote {idx}:** \"{q}\"")
+                else:
+                    st.write("No specific quotes available for this theme.")
+            except Exception:
+                st.write(str(raw_quotes))
+    else:
+        st.warning("Competitor complaints summary report not found. Please run the analysis script first.")
 # -----------------------------------------------------------
 # SUMMARY PAGE – Executive Insights
 # -----------------------------------------------------------
@@ -1096,8 +1150,8 @@ elif menu == "Survivorship Analysis":
     SURV_PATH = CURATED_DIR / "survivorship_results.csv"
     
     if not os.path.exists(SURV_PATH):
-        st.warning("⚠️ Data not ready. Please run the `survivorship_scraper.py` script first.")
-        st.stop()
+            st.warning("⚠️ Data not ready. Please run the `survivorship_scraper.py` script first.")
+            st.stop()
         
     df_surv = pd.read_csv(SURV_PATH)
     
@@ -1251,8 +1305,8 @@ elif menu == "Survivorship Analysis":
         By analyzing the feature sets, we can observe whether complex features (like gamification or strict blocking) contribute to a higher retention and survival rate in the digital productivity market compared to simple features.
         """)
 
-elif menu == "Summary":
-    st.title("📘 Summary – Focus Bear Competitive Intelligence Insights")
+    elif menu == "Summary":
+        st.title("📘 Summary – Focus Bear Competitive Intelligence Insights")
 
     st.markdown("""
     <div style='color:#93C5FD; font-size:18px; font-weight:600; margin-bottom:10px;'>
