@@ -21,6 +21,7 @@ WEBSITES_CSV        = CURATED_DIR / "websites.csv"
 REVIEWS_CSV         = CURATED_DIR / "reviews.csv"
 REVIEWS_SENT_CSV    = CURATED_DIR / "reviews_with_sentiment.csv"
 APP_SENTIMENT_CSV   = CURATED_DIR / "app_sentiment.csv"
+DATASET_SUMMARY_MD  = CURATED_DIR / "DATASET_SUMMARY.md"   # written by scripts/dataset_summary.py (issue #11)
 
 # Feature outputs
 FEATURES_DIR                 = CURATED_DIR
@@ -201,10 +202,35 @@ def step_feature_matrix(in_dir: Path, out_dir: Path,
         cmd += ["--sent-csv", str(bundle_sent)]
     return run(cmd, dry, coe)
 
+def step_dataset_summary(review_settings: dict | None, dry: bool, coe: bool):
+    """
+    Write DATASET_SUMMARY.md (+ charts): apps and reviews per platform, reviews
+    per app, review date range, website text / install count coverage. (Issue #11)
+
+    review_settings = the cap/stores/countries/languages/days the reviews step
+    used THIS run, so the summary can record them. It is None when the reviews
+    step was skipped: the reviews.csv on disk then came from an earlier run, and
+    passing this run's settings would wrongly describe it. With None,
+    dataset_summary.py reuses the settings it saved last time instead.
+    """
+    # Same pattern as the other steps: build the command as a list, then run() it.
+    # sys.executable = the Python currently running this script (the venv's Python).
+    cmd = [sys.executable, "scripts/dataset_summary.py"]
+    if review_settings:
+        # Add e.g. "--review-cap 500 --countries au,us,gb ..." to the command
+        cmd += [
+            "--review-cap", str(review_settings["max_per_app"]),
+            "--stores", review_settings["stores"],
+            "--countries", review_settings["countries"],
+            "--langs", review_settings["langs"],
+            "--since-days", str(review_settings["since_days"]),
+        ]
+    return run(cmd, dry, coe)
+
 # --------------- CLI ---------------
 def main():
     ap = argparse.ArgumentParser(
-        description="One-click refresh: scrape → normalize → clean → websites → reviews → sentiment → features (heuristic + optional LLM)"
+        description="One-click refresh: scrape → normalize → clean → websites → reviews → sentiment → features (heuristic + optional LLM) → dataset summary"
     )
     # Global
     ap.add_argument("--dry-run", action="store_true", help="Print commands only; do not execute")
@@ -220,6 +246,7 @@ def main():
     ap.add_argument("--skip-feature-flags", action="store_true")
     ap.add_argument("--skip-feature-llm", action="store_true")
     ap.add_argument("--skip-feature-matrix", action="store_true")
+    ap.add_argument("--skip-dataset-summary", action="store_true")
 
     # Scrape
     ap.add_argument("--discover", action="store_true")
@@ -364,6 +391,19 @@ def main():
     else:
         print("[skip] feature-matrix")
 
+    # 10) Dataset summary (apps/reviews per platform, date range, charts) - runs last
+    #     because it summarises what all the steps above produced.
+    if not args.skip_dataset_summary:
+        # Only pass the review settings if the reviews step actually ran this time
+        # (see step_dataset_summary's docstring for why).
+        review_settings = None if args.skip_reviews else {
+            "max_per_app": args.max_per_app, "stores": args.stores, "countries": args.countries,
+            "langs": args.langs, "since_days": args.since_days,
+        }
+        step_dataset_summary(review_settings, args.dry_run, args.continue_on_error)
+    else:
+        print("[skip] dataset-summary")
+
     print(f"\n=== Refresh finished @ {datetime.now().isoformat(timespec='seconds')} ===")
     print("Outputs:")
     print("-", FULL_DUMP_JSONL.relative_to(PROJECT_ROOT))
@@ -380,6 +420,7 @@ def main():
     print("-", FEATURES_LONG_CSV.relative_to(PROJECT_ROOT))
     if FEATURES_LLM_CSV.exists():
         print("-", FEATURES_LLM_CSV.relative_to(PROJECT_ROOT))
+    print("-", DATASET_SUMMARY_MD.relative_to(PROJECT_ROOT))
 
 if __name__ == "__main__":
     main()
