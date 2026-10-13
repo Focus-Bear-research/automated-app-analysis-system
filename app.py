@@ -1286,7 +1286,7 @@ elif menu == "Summary":
       Apps offering 7+ core features score **20–30% higher retention** in user feedback.
 
     - **ADHD Insights:**  
-      From 18 ADHD-related user reviews, **themes like “focus”, “timer”, and “motivation”** dominate the discussion.  
+      From the neurodivergent user reviews collected so far, **themes like “focus”, “timer”, and “motivation”** dominate the discussion.  
       Users frequently mention the need for **more flexible session lengths**, **reward variety**, and **affordable premium models**.
     """)
 
@@ -1301,7 +1301,14 @@ elif menu == "Summary":
     with c2:
         st.metric("Average App Rating", f"{apps['Average Rating'].mean():.2f} ⭐")
     with c3:
-        st.metric("Total ADHD Reviews", "18")
+        # Count the neurodivergent reviews from the data rather than hardcoding a
+        # number, so this metric always matches what the scraper has collected.
+        try:
+            nd_reviews = pd.read_csv(CURATED_DIR / "reviews.csv", low_memory=False)
+            nd_total = int((nd_reviews["special_reviews"] == True).sum())
+            st.metric("Total ND Reviews", f"{nd_total:,}")
+        except Exception:
+            st.metric("Total ND Reviews", "n/a")
 
     # -----------------------------------------------------------
     # 💡 Strategic Recommendations
