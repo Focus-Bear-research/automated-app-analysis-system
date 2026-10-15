@@ -162,7 +162,9 @@ menu = st.sidebar.radio(
 # LOAD DATA
 # -----------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
-CURATED_DIR = BASE_DIR / "data" / "curated"
+# Set the CURATED_DIR environment variable to show other data, e.g. the smoke-run
+# output: CURATED_DIR=data/smoke/curated streamlit run app.py
+CURATED_DIR = Path(os.environ.get("CURATED_DIR", BASE_DIR / "data" / "curated"))
 
 DATA_PATH = CURATED_DIR / "apps_clean.csv"
 
@@ -1079,8 +1081,10 @@ elif menu == "Feature Matrix":
 
     st.markdown("### 🌳 Feature Distribution by App Area")
 
+    # Leave out zero-app features: they have no area in a treemap, and an app
+    # area whose features are all zero makes plotly divide by zero and crash.
     fig_tree = px.treemap(
-        feature_df,
+        feature_df[feature_df["num_apps"] > 0],
         path=["app_type_label", "feature_label"],
         values="num_apps",
         color="num_apps",

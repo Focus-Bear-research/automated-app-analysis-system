@@ -60,18 +60,59 @@ Automated App Analysis System
   +-- app.py
   +-- README.md
 
-2. SETUP
+2. SETUP (fresh clone -> working dashboard)
 
-2.1 Install dependencies
+2.1 What you need first
 
-    pip install -r requirements.txt
+  - Python 3.12. NOT 3.13: on 3.13, torch cannot be installed on Intel Macs and greenlet
+    (needed by playwright) fails to build. On a Mac:  brew install python@3.12
+  - git, and about 3 GB of free disk space (torch and the sentiment models are large).
 
-Key packages: streamlit, pandas, plotly, google-play-scraper, transformers, torch, openai,
-google-generativeai, requests, tqdm, pyyaml.
+2.2 One-command setup
 
-2.2 Set environment variables
+    git clone https://github.com/Focus-Bear-research/automated-app-analysis-system.git
+    cd automated-app-analysis-system
+    bash scripts/setup.sh
 
-    $env:OPENAI_API_KEY = "sk-..."
+setup.sh finds Python 3.12, creates a virtual environment in .venv/, installs the pinned
+versions in requirements.txt, installs the Chromium browser for playwright, and creates the
+data folders. It is safe to run again.
+
+2.3 Check it works: the smoke run (a few minutes)
+
+    bash scripts/smoke_run.sh
+
+This runs every pipeline stage on a tiny fixed dataset (8 apps, 50 reviews, saved in
+tests/fixtures/smoke/) and writes only to data/smoke/, so your real data is not touched.
+It ends with "SMOKE RUN PASSED" or tells you which stage failed. Options:
+
+    bash scripts/smoke_run.sh --online   # also test the live website and review scrapers
+    bash scripts/smoke_run.sh --llm      # also call the real LLM (needs OPENAI_API_KEY, a few cents)
+
+To see the smoke data in the dashboard:
+
+    CURATED_DIR=data/smoke/curated .venv/bin/streamlit run app.py
+
+Run the smoke run after every code change, before opening a pull request.
+To change which apps are in the test set, edit scripts/make_smoke_fixtures.py and run it.
+
+2.4 Open the dashboard on the real data
+
+    .venv/bin/streamlit run app.py
+
+2.5 Use the project's Python
+
+Run every command below with the project's Python, either by typing .venv/bin/python
+instead of python, or by first "activating" the environment in your Terminal:
+
+    source .venv/bin/activate
+
+2.6 API key (only for the LLM steps)
+
+    export OPENAI_API_KEY="sk-..."          # Mac / Linux, lasts until you close the Terminal
+    $env:OPENAI_API_KEY = "sk-..."          # Windows PowerShell
+
+Never commit the key to git. See section 7 for cost and run time.
 
 3. PIPELINE WALKTHROUGH
 
@@ -202,12 +243,92 @@ The Feature Matrix page displays:
   Apps with the Most Detected Features
   Insights Summary
 
-7. ENVIRONMENT VARIABLES
+7. LLM, API KEY, COST AND RUN TIME
 
-  OPENAI_API_KEY  -- Required for LLM feature classification and extraction
+7.1 Which model and provider
+
+  Step 8 (llm/feature_llm.py) sends one prompt per app per routed app type (DSCT, habit,
+  planner) to OpenAI's Chat Completions API. Default model: gpt-4.1-mini (--model to
+  change), temperature 0, up to 3,200 output tokens. --base-url points it at any
+  OpenAI-compatible provider. --dry builds the prompts without calling the API (free).
+
+7.2 How the key is supplied
+
+  OPENAI_API_KEY  -- read from the environment (see 2.6), or pass --api-key.
+  OPENAI_BASE_URL -- optional, for an OpenAI-compatible provider other than OpenAI.
+  Only the LLM steps need a key. refresh_all.py runs the LLM step only with --use-llm.
+
+7.3 Approximate cost and time of a full run (ESTIMATES, measured Oct 2026)
+
+  Size of the last full run: 729 apps -> 2,187 LLM calls (about 3 per app).
+  Prompt size, measured with the real prompt code: about 2,200 tokens without website text,
+  about 3,200 with it.
+
+  LLM step (gpt-4.1-mini, at about US$0.40 per 1M input tokens and US$1.60 per 1M output):
+      input   ~2,187 x 3,000 tokens = ~6.6M tokens  -> ~US$2.60
+      output  ~2,187 x 1,000 tokens = ~2.2M tokens  -> ~US$3.50
+      total   about US$5-10 per full run; roughly 3-5 hours (about 5-8 s per call)
+  Check current prices on OpenAI's pricing page and the real cost on your usage dashboard
+  after a run, then update these numbers.
+
+  Non-LLM stages (measured on a 2017 Intel MacBook Pro, logs/e2e_20261002_185705.log):
+      discovery + scrape + normalize + clean + websites + reviews ......... ~56 min
+      survivorship scraper ................................................ ~10 min
+      RoBERTa sentiment and the other scripts ............................. minutes
+  Smoke run (scripts/smoke_run.sh): a few minutes; the first run also downloads the
+  ~500 MB sentiment model.
 
 
-8. KNOWN ISSUES & FIXES
+8. TROUBLESHOOTING (KNOWN ISSUES & FIXES)
+
+First step for any problem: run  bash scripts/smoke_run.sh  and see which stage fails.
+
+8.1 Setup and installation
+
+  Symptom: "Failed building wheel for greenlet" / "this header requires Py_BUILD_CORE define"
+  Cause:   Python 3.13. playwright 1.47 needs greenlet 3.0.x, which does not build on 3.13.
+  Fix:     Use Python 3.12 (brew install python@3.12), then: rm -rf .venv && bash scripts/setup.sh
+
+  Symptom: "No matching distribution found for torch"
+  Cause:   Python 3.13 on an Intel Mac. torch 2.2.2 is the last Intel Mac version, up to Python 3.12.
+  Fix:     As above: use Python 3.12.
+
+  Symptom: "ERROR: Playwright does not support chromium on mac13"
+  Cause:   An unpinned, newer playwright was installed (newer versions dropped macOS 13).
+  Fix:     Install from requirements.txt (playwright==1.47.0). Only website scraping with
+           --js-fallback needs Chromium; everything else works without it.
+
+  Symptom: "NameError: name 'torch' is not defined" (RoBERTa sentiment, zero-shot ADHD classifier)
+  Cause:   transformers is installed but torch is not (it failed to install, see above).
+  Fix:     Run setup.sh with Python 3.12 so torch installs.
+
+  Symptom: "pyarrow requires NumPy 2.0 or newer, found 1.26.4" (dashboard tables crash)
+  Cause:   An unpinned, new pyarrow. numpy must stay at 1.26.x for torch 2.2.2.
+  Fix:     Install from requirements.txt (pyarrow==17.0.0).
+
+  Symptom: a stage dies with "SIGSEGV" / "exit -11"
+  Cause:   Seen with the old Python 3.13 "venv/" folder (library builds that don't match).
+  Fix:     Use the .venv/ that setup.sh makes with Python 3.12.
+
+  Symptom: the first run of any step is very slow (a minute or more for a tiny file)
+  Cause:   Normal. A new environment compiles and caches its libraries on first use,
+           and the first sentiment run downloads the ~500 MB RoBERTa model.
+  Fix:     None needed; later runs are fast.
+
+8.2 Pipeline
+
+  Symptom: refresh_all.py reports success, but outputs are missing or old
+  Cause:   With --continue-on-error, refresh_all.py still exits with "OK" when steps fail.
+           Read its log for "[ERROR] step failed" lines.
+
+  Symptom: refresh_all.py sentiment step: "unrecognized arguments: run --out-reviews ... --engine vader"
+  Cause:   refresh_all.py still uses an old command format. llm/sentiment_pipeline.py now
+           takes --in, --out and --backend (roberta or llm), with no "run" subcommand.
+  Fix:     NOT FIXED YET. Until it is, run the sentiment step by hand (see Step 4 above).
+
+  Symptom: refresh_all.py feature-matrix step: "unrecognized arguments: --min-review-hits ... --sent-csv"
+  Cause:   etl/build_feature_matrix.py no longer has those options.
+  Fix:     NOT FIXED YET. Until it is, run Step 9 above by hand.
 
   Issue: TypeError: Path.replace() takes 2 positional arguments in feature_extract.py line 183
   Fix:   Change out_csv.replace(".csv","_rollup.csv") to
