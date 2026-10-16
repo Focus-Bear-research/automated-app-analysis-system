@@ -18,18 +18,27 @@ keywords:
 
   # ND & wellness
   - ADHD
+  - ADHD planner
+  - ADHD focus
   - autism
+  - autism support
+  - autistic adults
+  - neurodivergent
+  - executive function
+  - executive dysfunction
+  - task paralysis
+  - body doubling
   - mindfulness
   - meditation
 
 limits:
-  per_keyword_per_store: 50      # raise to capture more per keyword
-  similar_per_app: 15            # related apps carousel
+  per_keyword_per_store: 100     # raise to capture more per keyword
+  similar_per_app: 20            # related apps carousel
   max_total_candidates: 500      # cap total discovery
 
 filters:
   min_rating_count: 25
-  include_terms: ["focus","block","timer","pomodoro","productivity","habit","distraction","parental","adhd","study","routine","mindful","meditation"]
+  include_terms: ["focus","block","timer","pomodoro","productivity","habit","distraction","parental","adhd","autis","neurodiverg","executive","study","routine","mindful","meditation"]
   exclude_terms: ["wallpaper","theme","ringtone","launcher","keyboard","icon","vpn","antivirus","browser","camera","photo","video","game","music","widget","gallery"]
 
 categories:

@@ -866,14 +866,14 @@ elif menu == "ADHD Analysis":
         st.warning("⚠️ No reviews are flagged as TRUE in 'special_reviews'.")
         st.stop()
 
-    st.markdown(f"### Found **{len(df_special)} ADHD-related reviews** 🧩")
+    st.markdown(f"### Found **{len(df_special)} neurodivergent reviews** 🧩")
 
     
     
     # -----------------------------------------------------------
     # ⭐ Rating Distribution among ADHD Reviews (Final Stable Version)
     # -----------------------------------------------------------
-    st.markdown("#### ⭐ Rating Distribution among ADHD Reviews")
+    st.markdown("#### ⭐ Rating Distribution among Neurodivergent Reviews")
 
     # --- Detect the rating column automatically ---
     rating_col = next((c for c in df_special.columns if "rating" in c.lower()), None)
@@ -904,7 +904,7 @@ elif menu == "ADHD Analysis":
             )
 
             fig_rating.update_layout(
-                title="User Rating Distribution (ADHD Reviews)",
+                title="User Rating Distribution (Neurodivergent Reviews)",
                 plot_bgcolor="#111827",
                 paper_bgcolor="#111827",
                 font=dict(color="#E5E7EB"),
@@ -922,7 +922,7 @@ elif menu == "ADHD Analysis":
 
             # --- Display average rating ---
             avg_rating = df_special[rating_col].mean()
-            st.markdown(f"⭐ **Average ADHD Review Rating:** {avg_rating:.2f} / 5")
+            st.markdown(f"⭐ **Average Neurodivergent Review Rating:** {avg_rating:.2f} / 5")
 
         except Exception as e:
             st.error(f"Error creating rating chart: {e}")
@@ -935,7 +935,7 @@ elif menu == "ADHD Analysis":
     # -----------------------------------------------------------
     # ☁️ Word Cloud – Common Terms in ADHD Reviews (Resized Version)
     # -----------------------------------------------------------
-    st.markdown("#### ☁️ Word Cloud – Common Terms in ADHD Reviews")
+    st.markdown("#### ☁️ Word Cloud – Common Terms in Neurodivergent Reviews")
 
     try:
         from wordcloud import WordCloud
@@ -1010,7 +1010,7 @@ elif menu == "ADHD Analysis":
     fig_sentiment.update_layout(
         paper_bgcolor="#111827",
         font=dict(color="#E5E7EB"),
-        title=dict(text="Sentiment Distribution for ADHD Reviews", font=dict(size=16, color="#E5E7EB")),
+        title=dict(text="Sentiment Distribution for Neurodivergent Reviews", font=dict(size=16, color="#E5E7EB")),
         showlegend=True,
             legend=dict(
             orientation="h",
@@ -1023,7 +1023,7 @@ elif menu == "ADHD Analysis":
     # -----------------------------------------------------------
     # 3️⃣ Keyword Frequency (Top 20)
     # -----------------------------------------------------------
-    st.markdown("#### ☁️ Top Keywords in ADHD Reviews")
+    st.markdown("#### ☁️ Top Keywords in Neurodivergent Reviews")
 
     import re
     from collections import Counter
@@ -1053,7 +1053,7 @@ elif menu == "ADHD Analysis":
     # -----------------------------------------------------------
     # 4️⃣ Sample Reviews
     # -----------------------------------------------------------
-    st.markdown("#### 🧾 Sample ADHD-Flagged Reviews")
+    st.markdown("#### 🧾 Sample Neurodivergent-Flagged Reviews")
 
     for _, row in df_special.head(5).iterrows():
         st.markdown(f"""
@@ -1077,8 +1077,8 @@ elif menu == "ADHD Analysis":
     st.info(f"""
     🔹 **Average Rating:** {avg_rating:.2f}/5  
     🔹 **Most Frequent Keyword:** '{top_word.title()}'  
-    🔹 **Positive Sentiment:** {pos_percent:.1f}% of ADHD-tagged users  
-    🔹 Users often mention focus, concentration, and improvement when describing ADHD benefits.
+    🔹 **Positive Sentiment:** {pos_percent:.1f}% of neurodivergent users  
+    🔹 Users often mention focus, concentration, and improvement when describing the benefits.
     """)
 
 
@@ -1286,7 +1286,7 @@ elif menu == "Summary":
       Apps offering 7+ core features score **20–30% higher retention** in user feedback.
 
     - **ADHD Insights:**  
-      From 18 ADHD-related user reviews, **themes like “focus”, “timer”, and “motivation”** dominate the discussion.  
+      From the neurodivergent user reviews collected so far, **themes like “focus”, “timer”, and “motivation”** dominate the discussion.  
       Users frequently mention the need for **more flexible session lengths**, **reward variety**, and **affordable premium models**.
     """)
 
@@ -1301,7 +1301,14 @@ elif menu == "Summary":
     with c2:
         st.metric("Average App Rating", f"{apps['Average Rating'].mean():.2f} ⭐")
     with c3:
-        st.metric("Total ADHD Reviews", "18")
+        # Count the neurodivergent reviews from the data rather than hardcoding a
+        # number, so this metric always matches what the scraper has collected.
+        try:
+            nd_reviews = pd.read_csv(CURATED_DIR / "reviews.csv", low_memory=False)
+            nd_total = int((nd_reviews["special_reviews"] == True).sum())
+            st.metric("Total ND Reviews", f"{nd_total:,}")
+        except Exception:
+            st.metric("Total ND Reviews", "n/a")
 
     # -----------------------------------------------------------
     # 💡 Strategic Recommendations

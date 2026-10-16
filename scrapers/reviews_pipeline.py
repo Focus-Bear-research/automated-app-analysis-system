@@ -27,8 +27,10 @@ NOW_ISO = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 # Matches "adhd" or "audhd" (having both ADHD and autism), any case
 ADHD_RX = re.compile(r"\badhd\b|\bau?dhd\b", re.I)
 
-# Matches "ADD" only in capital letters, so it skips the normal word "add"
-ADD_RX = re.compile(r"\bADD\b")
+# Note: the older acronym "ADD" is deliberately NOT matched. It is spelled the
+# same as the everyday verb "add", which reviewers use constantly ("please add
+# dark mode"), so it produced far more false positives than real diagnoses.
+# Anyone describing the condition today almost always writes ADHD.
 
 # Matches "autism", "autistic", "asd", or "asperger's", any case
 AUTISM_RX = re.compile(r"\bautis\w*\b|\basd\b|\basperger'?s?\b", re.I)
@@ -54,7 +56,7 @@ def get_nd_categories(title: str | None, body: str | None) -> list[str]:
     categories = []
 
     # Check for ADHD mentions
-    if ADHD_RX.search(text) or ADD_RX.search(text):
+    if ADHD_RX.search(text):
         categories.append("adhd")
 
     # Check for autism mentions
