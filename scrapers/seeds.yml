@@ -21,3 +21,86 @@ ios_ids:
 #
 # ios_ids:
 #   - idXXXXXXXXX
+
+# ---------------------------------------------------------------------
+# Apps to EXCLUDE (issue #25)
+# ---------------------------------------------------------------------
+# These apps are not Focus Bear competitors, so they are left out of the
+# review scraping (scrapers/reviews_pipeline.py) and the competitor
+# complaints analysis (etl/review_filters.py).
+# Format: the app_key used in data/curated/reviews.csv (<store>:<app id>).
+# To exclude another app, add its app_key below with a short comment.
+# Rule (Oct 2026): keep only clear competitors (blockers, screen time, focus
+# timers, ADHD, habit/routine planners). Meditation apps are excluded (Jeremy),
+# and apps whose purpose was unclear are excluded to be safe.
+exclude_app_keys:
+  # Not competitors: parental controls, clocks, office/PDF, AI chat, phone-maker apps, and other non-focus apps
+  - play:ai.x.grok.bot    # AI chatbot
+  - play:aws.exam    # exam prep
+  - play:com.adobe.reader    # Adobe Acrobat Reader: Edit PDF
+  - play:com.apps.clock.theclock    # alarm clock
+  - play:com.autismadult.test    # autism test
+  - play:com.becloser    # couples app
+  - play:com.codeorigin.timer.stopwatch.app.custom.timerapp.countdowntimer.stopwatchlaps.sports.gym.track.time.stopwatchapp.laps.clock.progress    # Timer Stopwatch App - Sound
+  - play:com.focusschoolsoftware.community.bps    # school app
+  - play:com.focusschoolsoftware.community.hcps    # school app
+  - play:com.goduomo    # Bible app
+  - play:com.google.android.apps.kids.familylink    # parental controls
+  - play:com.google.android.apps.kids.familylinkhelper    # parental controls (child side)
+  - play:com.google.android.deskclock    # Google Clock
+  - play:com.gymnext.timer    # gym timer
+  - play:com.imagiration.mita    # autism language therapy
+  - play:com.mdev.intervaltimer    # Interval Timer: Workout, HIIT
+  - play:com.microsoft.office.powerpoint    # Microsoft PowerPoint
+  - play:com.mightybell.theautismhelper    # autism community
+  - play:com.missingstep.aactalk.autism    # AAC speech for autism
+  - play:com.motorola.spaces    # Family Space
+  - play:com.omega.babyleap    # baby development
+  - play:com.vgfit.timerplus    # workout timer
+  - play:fibromyalgia.symptom.tracker.pain.diary.log    # pain diary
+  - play:notion.id    # Notion: Notes, Tasks, AI
+  - play:ru.atec    # autism evaluation
+  # Meditation and mindfulness apps (Jeremy, Oct 2026: not competitors)
+  - play:app.meditasyon    # meditation
+  - play:app.momeditation    # meditation
+  - play:br.com.lojong    # meditation
+  - play:com.abdula.pranabreath    # Prana Breath: Calm & Meditate
+  - play:com.changecollective.tenpercenthappier    # Happier Meditation
+  - play:com.healthyminds    # meditation
+  - play:com.meditation.elevenminute    # Let's Meditate: Relax & Sleep
+  - play:com.mindfulness.greece.meditation    # meditation
+  - play:com.simplehabit.simplehabitapp    # Simple Habit: Meditation
+  - play:de.iab.meditationtimer    # meditation timer
+  - play:gov.va.mobilehealth.ncptsd.mindfulnesscoach    # PTSD mindfulness
+  - play:meditofoundation.medito    # Medito: Meditation & Sleep
+  - play:net.langhoangal.chuongchanhniem    # mindfulness bell
+  - play:org.wakingup.android    # Waking Up: Meditation & Wisdom
+  - play:se.lichtenstein.mind.en    # The Mindfulness App
+  # Not clearly a competitor: purpose unknown or unclear from the store listing, excluded to be safe
+  - play:air.nn.mobile.app.main    # unknown from package name
+  - play:app.kiteki    # unknown
+  - play:app.littleplanner    # possibly kids planner
+  - play:ba.dysko.mct    # unknown
+  - play:com.bdfffaiidj.ebcbdfffaiidj    # unknown
+  - play:com.blu.rabito    # unknown
+  - play:com.brainrot.android    # possibly screen-time blocker
+  - play:com.cetinkaya.time_balance    # possibly screen time
+  - play:com.cognifit.android.adhd    # brain training
+  - play:com.digitallence.mindbuddy    # unknown
+  - play:com.goddessapp.goddess    # unknown
+  - play:com.hugomeninoaguiar.mymobileapp    # unknown
+  - play:com.minute.back    # unknown
+  - play:com.myneurogym.innercise    # mindset/self-help
+  - play:com.neurofit.app    # nervous-system wellness
+  - play:com.padoski.Lilo    # unknown
+  - play:com.pikwxwpq5b1i.plgj6rakapp    # unknown
+  - play:com.por7al.reviser    # study revision
+  - play:com.shimmer.copilot    # possibly ADHD coaching
+  - play:com.soothfy    # unknown
+  - play:com.soulcloud.torch    # possibly flashlight
+  - play:com.step.vibe    # unknown
+  - play:com.stonecutters.islegrow    # unknown
+  - play:com.theraview.androidApp    # therapy
+  - play:com.tryhypermonkey.hypermonkey    # unknown
+  - play:com.viaapp    # unknown
+  - play:io.mindist.well    # unknown

@@ -111,7 +111,8 @@ div[role='radiogroup'] label[data-selected="true"] p {
 st.sidebar.markdown("<div class='sidebar-header'>Focus Bear</div>", unsafe_allow_html=True)
 menu = st.sidebar.radio(
     "Navigation",
-    ["Overview", "Competitors", "Sentiment Analysis", "Feature Matrix", "ADHD Analysis", "Summary", "Survivorship Analysis"],
+    ["Overview", "Competitors", "Sentiment Analysis", "Feature Matrix", "ADHD Analysis", "Summary", "Survivorship Analysis",
+     "Why Users Leave Competitors"],  # issue #25
     index=0
 )
 
@@ -1344,3 +1345,84 @@ elif menu == "Summary":
     """)
 
     st.markdown("<div class='footer'>© 2025 Focus Bear | Built for Competitive Intelligence Insights</div>", unsafe_allow_html=True)
+
+
+# -----------------------------------------------------------
+# WHY USERS LEAVE COMPETITORS   (issue #25)
+# -----------------------------------------------------------
+# Reads competitor_complaints_summary.csv, made by
+# scripts/analyze_competitor_complaints.py: one row per app + complaint
+# theme, with the number of bad reviews, their share of that app's bad
+# reviews, and example quotes. Themes come from Jev (TypeSafe AI).
+elif menu == "Why Users Leave Competitors":
+    st.title("🚪 Why Users Leave Competitors")
+    st.markdown(
+        "What competitors' **1–2★ reviews** complain about most. Each review was given one "
+        "main complaint theme by **Jev** (TypeSafe AI). Answers Jev wasn't sure about "
+        "(confidence below 0.5) are shown as **uncertain**. Non-competitor apps and reviews "
+        "with no app key are left out (see `exclude_app_keys` in `scrapers/seeds.yml`)."
+    )
+
+    COMPLAINTS_PATH = CURATED_DIR / "competitor_complaints_summary.csv"
+    if not os.path.exists(COMPLAINTS_PATH):
+        st.info("Run `scripts/analyze_competitor_complaints.py` first to create "
+                "`competitor_complaints_summary.csv`.")
+        st.stop()
+
+    complaints = pd.read_csv(COMPLAINTS_PATH)
+
+    # Plain-English names for the theme labels.
+    THEME_NAMES = {
+        "pricing": "Pricing & billing",
+        "bugs_crashes": "Bugs & crashes",
+        "too_easy_to_bypass": "Too easy to bypass",
+        "too_rigid": "Too rigid",
+        "notifications": "Notifications",
+        "onboarding": "Onboarding & setup",
+        "sync": "Sync & devices",
+        "missing_feature": "Missing feature",
+        "other": "Other",
+        "uncertain": "Uncertain",
+    }
+    complaints["Theme"] = complaints["theme"].map(THEME_NAMES).fillna(complaints["theme"])
+
+    # ---- 1. Across all competitors ----
+    st.markdown("### 📊 Top complaint themes across all competitors")
+    market = (complaints.groupby("Theme", as_index=False)["n_reviews"].sum()
+              .sort_values("n_reviews", ascending=True))
+    market["Share"] = market["n_reviews"] / market["n_reviews"].sum()
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Bad reviews classified", f"{int(market['n_reviews'].sum()):,}")
+    c2.metric("Competitor apps", complaints["app_key"].nunique())
+    top = market.iloc[-1]
+    c3.metric("Top complaint", top["Theme"], f"{top['Share']:.0%} of bad reviews", delta_color="off")
+    fig = px.bar(market, x="n_reviews", y="Theme", orientation="h",
+                 text=market["Share"].map("{:.0%}".format),
+                 labels={"n_reviews": "Bad reviews", "Theme": ""})
+    st.plotly_chart(fig, use_container_width=True)
+
+    # ---- 2. One competitor at a time ----
+    st.markdown("### 🔎 Which competitor is weakest at what?")
+    # Only offer apps with enough bad reviews for the shares to mean something.
+    min_reviews = st.slider("Only show apps with at least this many bad reviews", 5, 200, 20)
+    app_totals = (complaints.groupby(["app_key", "app_name"], as_index=False)["app_bad_reviews"].first()
+                  .query("app_bad_reviews >= @min_reviews")
+                  .sort_values("app_bad_reviews", ascending=False))
+    if app_totals.empty:
+        st.warning("No apps have that many bad reviews. Move the slider down.")
+        st.stop()
+    labels = {r.app_key: f"{r.app_name} ({r.app_bad_reviews} bad reviews)" for r in app_totals.itertuples()}
+    chosen = st.selectbox("Competitor", list(labels), format_func=labels.get)
+    app_rows = complaints[complaints["app_key"] == chosen].sort_values("share", ascending=True)
+    fig_app = px.bar(app_rows, x="share", y="Theme", orientation="h",
+                     text=app_rows["share"].map("{:.0%}".format),
+                     labels={"share": "Share of this app's bad reviews", "Theme": ""})
+    fig_app.update_xaxes(tickformat=".0%")
+    st.plotly_chart(fig_app, use_container_width=True)
+
+    # ---- 3. Example quotes ----
+    st.markdown("### 💬 What users say")
+    theme_choice = st.selectbox("Theme", app_rows.sort_values("share", ascending=False)["Theme"])
+    quotes = app_rows.loc[app_rows["Theme"] == theme_choice, "example_quotes"].fillna("").iloc[0]
+    for q in [q for q in quotes.split(" || ") if q]:
+        st.markdown(f"> {q}")

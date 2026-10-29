@@ -1,0 +1,29 @@
+row,review_id,my_label,jev_label,jev_confidence,who_is_right,reason
+8,dd100645-cd84-4d19-9578-ad9021139270,bugs_crashes,other,0.9,me,new version works worse
+64,8ce526d8-155c-4e36-b003-73cf79aed617,other,too_rigid,0.88,jev,complaint is too much control; advice comes second
+65,d589c4fb-1639-441c-bbee-b0c544f5764f,bugs_crashes,other,0.87,jev,"data use, not a crash; privacy worry"
+32,92b17d92-faa5-42d6-9e06-f5b9b55b2c79,bugs_crashes,pricing,0.85,jev,complaint is paying and getting nothing (subscription problem)
+15,295e37f8-623d-493d-872f-b75fe70b40cd,bugs_crashes,pricing,0.84,both_ok,"bug first, billing is longest; tie-break rule unclear"
+19,0eb2c810-5a9c-4395-a2e6-010f1864bda1,bugs_crashes,too_rigid,0.84,me,"app is stuck (broken), not strict on purpose; too_rigid description issue"
+96,c51e9d60-eed9-4679-97b3-d48d1c483c03,missing_feature,pricing,0.81,both_ok,not enough content vs not worth the money
+78,12908597606,other,bugs_crashes,0.79,both_ok,joke or real 'doesn't work'; can't tell
+30,030f0226-ef60-468f-bc83-7535023ff7ff,other,onboarding,0.72,jev,still learning how to use it = hard to learn
+74,47127879-30d0-45a9-8949-8558cc118c6f,other,pricing,0.72,jev,says unsubscribe = subscription
+44,12802556631,bugs_crashes,onboarding,0.71,both_ok,re-setup after phone reset; rule gap (new phone -> sync?)
+46,12847028987,bugs_crashes,too_rigid,0.71,me,authenticator failing = broken; too_rigid description issue
+79,6fffe3e7-831f-4617-b0c0-44116365788f,bugs_crashes,too_rigid,0.64,jev,locked out of pages
+39,44525807-e320-4e21-8da1-89002ac0d5ab,too_rigid,other,0.63,me,kid says can't do anything = too strict; rest is venting
+95,f9a25a02-e251-46cc-973d-5af885b7fd38,too_rigid,other,0.62,both_ok,"kid vs parental controls; complaint is about dad, not app"
+56,6969e5bf-4566-451b-b099-c5d08731d59b,other,too_rigid,0.57,jev,app won't let parent turn it off = too strict
+58,e02c1959-32d7-429d-a1f2-9676eeaf3725,other,notifications,0.57,both_ok,unwanted feature vs interruption; Focus Bear lesson
+87,ecf24258-e528-4fb2-817f-bb6e3b1ce58c,sync,onboarding,0.55,me,new phone lost purchases = sync; login is the symptom
+90,3d9e098c-1109-446a-a07a-93d754406b04,onboarding,pricing,0.52,me,invite code blocks setup; money is their guess
+73,0fc6d01d-7c62-4a34-a571-71624789b4de,bugs_crashes,too_rigid,0.47,both_ok,blocks contacts: mistake vs blocks too much
+52,42e6c7ac-63cf-41b7-a0c9-4c8649c5b110,too_easy_to_bypass,bugs_crashes,0.46,both_ok,block leaks without user trying; rule needs deciding (A: any leak / B: user bypass)
+100,3d978286-0197-480d-9ae8-e345cd0b967e,other,sync,0.44,jev,wants it on other devices
+72,12935154444,sync,too_rigid,0.43,me,new phone problem = sync (same as row 87); too_rigid description issue
+3,60065bfd-9f0f-4061-9d0a-e7cdbb1eed25,bugs_crashes,too_rigid,0.42,me,DNS failure broke internet = bug; too_rigid description issue
+76,da054464-3eb6-4a51-8223-ab3bdd1d50e2,bugs_crashes,missing_feature,0.37,both_ok,3 complaints; tie-break rule unclear (first vs what they'd change)
+89,13040503964,pricing,too_rigid,0.37,me,barriers are to make money = pricing; Jev missed sarcasm
+34,12492972686,other,onboarding,0.34,me,"review pop-up = nagging_prompts, not setup"
+18,233c1375-2265-4fb2-b599-8ff8ecf22926,other,too_easy_to_bypass,0.3,me,unclear review; Jev guessing (0.30)
