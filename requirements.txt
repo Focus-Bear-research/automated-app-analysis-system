@@ -9,3 +9,4 @@ beautifulsoup4==4.12.3
 tenacity==8.5.0
 plotly==5.17.0
 google-play-scraper==1.2.7
+apify-client==3.4.0
