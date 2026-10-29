@@ -32,6 +32,10 @@ import pandas as pd
 #   .parents[1]         = .../automated-app-analysis-system
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+# Let this script import from the project's own folders (e.g. etl/).
+sys.path.insert(0, str(PROJECT_ROOT))
+from etl.review_filters import filter_reviews  # noqa: E402  (issue #25: no app_key / excluded apps)
+
 # Same idea as app.py: you can point the script at other data with the
 # CURATED_DIR environment variable. Normally it's data/curated.
 CURATED_DIR = Path(os.environ.get("CURATED_DIR", PROJECT_ROOT / "data" / "curated"))
@@ -90,6 +94,10 @@ def main():
     missing = [col for col in needed if col not in reviews.columns]
     if missing:
         sys.exit(f"reviews.csv is missing these columns: {missing}")
+
+    # Remove reviews with no app_key and reviews of non-competitor apps
+    # (exclude_app_keys in scrapers/seeds.yml), as Jeremy asked.
+    reviews = filter_reviews(reviews)
 
     # -----------------------------------------------------------------
     # 4. Keep only the bad reviews (1 or 2 stars)

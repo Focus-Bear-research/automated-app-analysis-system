@@ -25,42 +25,25 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
-from typesafe_sdk import Choice, TypeSafeClient, TypeSafeError
+from typesafe_sdk import TypeSafeClient, TypeSafeError
 
 # ---------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Let this script import from the project's own folders (e.g. etl/).
+sys.path.insert(0, str(PROJECT_ROOT))
+# Themes, the Jev question and the model live in one shared file, so this
+# test and the full analysis always ask Jev exactly the same thing.
+from etl.complaint_themes import JEV_MODEL, QUESTION, THEMES  # noqa: E402
 LABELS_DIR = PROJECT_ROOT / "data" / "labels"
 
 TEST_SET_CSV = LABELS_DIR / "issue25_test_set.csv"        # your hand labels (input)
 RESULTS_CSV = LABELS_DIR / "issue25_jev_results.csv"      # Jev's answers (output, also the cache)
 REPORT_MD = LABELS_DIR / "issue25_agreement_report.md"    # the summary for Jeremy (output)
 
-# Fix the exact Jev model, so results don't change when TypeSafe
-# releases a new one. (try_jev.py showed jev-1.14.0 on 22 Oct 2026.)
-JEV_MODEL = "jev-1.14.0"
 
-# Same themes and descriptions (version 2) as try_jev.py and the theme rules in
-# PY_issue25_next_steps.md. If you change the rules, change them here too.
-THEMES = {
-    "pricing": "Too expensive, a paywall, subscription, billing or refund problems (surprise charges, can't cancel), a free version that's too limited, the price is hidden until after setup, or barriers put there to make users pay.",
-    "bugs_crashes": "The app is broken: it crashes, freezes, is slow, gives wrong results, or a feature doesn't work as it should. Includes being locked out or unable to log in or reach their content because the app is failing.",
-    "too_easy_to_bypass": "Blocking or limits leak for any reason: the user can get around them, or some apps or sites are not actually blocked or stopped when they should be.",
-    "too_rigid": "The app's rules are too strict on purpose: it blocks things the person needs, has no way out in an emergency, or won't let them change or turn off a block. Includes kids complaining that parental controls restrict them. NOT when the app is broken or failing (that is bugs_crashes).",
-    "notifications": "Too many, too few, or annoying phone notifications or reminders. Not pop-ups inside the app.",
-    "onboarding": "Problems when first setting up or signing up: confusing setup, can't register, stuck on a setup step, needs an invite code, or hard to learn at first.",
-    "sync": "Data, purchases or accounts don't carry across devices: no sync between devices, data lost when switching, or problems after getting a new phone or resetting the phone.",
-    "missing_feature": "They wanted something the app doesn't have.",
-    "other": "None of the above, e.g. ads, can't uninstall, pop-ups asking for a rating, design, or not really a complaint.",
-}
-
-QUESTION = Choice(
-    instructions="This is a negative app store review of a productivity or focus app. "
-                 "What is the reviewer's MAIN complaint? If there are several, pick the one "
-                 "they write the most about or are angriest about.",
-    criteria=THEMES,
-)
 
 # Save progress to disk after this many reviews.
 SAVE_EVERY = 10

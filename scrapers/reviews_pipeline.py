@@ -7,6 +7,8 @@ from typing import List, Dict, Any, Iterable, Tuple, Set, Optional
 import requests
 import pandas as pd
 
+from etl.review_filters import load_excluded_app_keys   # issue #25: non-competitor exclusion list
+
 try:
     from tqdm import tqdm
 except Exception:
@@ -137,14 +139,24 @@ def load_candidates_from_dump(dump_path: Path) -> List[Dict[str, Any]]:
             for t in df.itertuples(index=False):
                 items.append({"store": getattr(t, "store"), "id": str(getattr(t, "id")), "title": getattr(t, "title", "")})
 
+    # Skip apps listed under `exclude_app_keys` in scrapers/seeds.yml
+    # (non-competitors, issue #25), so we don't scrape their reviews.
+    excluded = load_excluded_app_keys()
+
     seen: Set[Tuple[str, str]] = set()
     uniq: List[Dict[str, Any]] = []
+    skipped = 0
     for it in items:
         k = (it["store"], it["id"])
         if k in seen:
             continue
         seen.add(k)
+        if compute_app_key(it["store"], it["id"]) in excluded:
+            skipped += 1
+            continue
         uniq.append(it)
+    if skipped:
+        print(f"[reviews] skipped {skipped} excluded apps (exclude_app_keys in scrapers/seeds.yml)")
     return uniq
 
 # ------------------ CSV I/O ------------------
