@@ -108,11 +108,15 @@ div[role='radiogroup'] label[data-selected="true"] p {
 # -----------------------------------------------------------
 # SIDEBAR
 # -----------------------------------------------------------
+# Page name used by both the menu and the page check below (issue #25),
+# so the two can never get out of step.
+PAGE_WHY_USERS_LEAVE = "Why Users Leave Competitors"
+
 st.sidebar.markdown("<div class='sidebar-header'>Focus Bear</div>", unsafe_allow_html=True)
 menu = st.sidebar.radio(
     "Navigation",
     ["Overview", "Competitors", "Sentiment Analysis", "Feature Matrix", "ADHD Analysis", "Summary", "Survivorship Analysis",
-     "Why Users Leave Competitors"],  # issue #25
+     PAGE_WHY_USERS_LEAVE],
     index=0
 )
 
@@ -1354,8 +1358,8 @@ elif menu == "Summary":
 # scripts/analyze_competitor_complaints.py: one row per app + complaint
 # theme, with the number of bad reviews, their share of that app's bad
 # reviews, and example quotes. Themes come from Jev (TypeSafe AI).
-elif menu == "Why Users Leave Competitors":
-    st.title("🚪 Why Users Leave Competitors")
+elif menu == PAGE_WHY_USERS_LEAVE:
+    st.title(f"🚪 {PAGE_WHY_USERS_LEAVE}")
     st.markdown(
         "What competitors' **1–2★ reviews** complain about most. Each review was given one "
         "main complaint theme by **Jev** (TypeSafe AI). Answers Jev wasn't sure about "

@@ -1,42 +1,24 @@
-# Issue #25 – Jev vs test-set labels
+# Issue #25 – how well Jev agrees with the test-set labels
 
-_Run on 29 Oct 2026 · model `jev-1.14.0` · 36 reviews_
+Model: `jev-1.14.0`. Each run compares Jev's theme with the label in the test set.
 
-## Headline
-
-| Measure | Value |
-|---|---|
-| % agreement | 94% (34 of 36) |
-| Cohen's kappa | 0.93 |
-| Median Jev confidence when it agrees | 0.99 |
-| Median Jev confidence when it disagrees | 0.71 |
+| Run | Date | Reviews | % agreement | Cohen's kappa | Median confidence: agrees / disagrees |
+|---|---|---|---|---|---|
+| v1 descriptions, all apps | 22 Oct 2026 | 100 | 72% | 0.65 | 0.99 / 0.62 |
+| v2 descriptions, all apps | 22 Oct 2026 | 100 | 82% | 0.77 | 0.98 / 0.75 |
+| v2 descriptions, competitor apps only | 29 Oct 2026 | 36 | 94% | 0.93 | 0.99 / 0.71 |
 
 Kappa guide: 0.6–0.8 good, above 0.8 very good.
 
-## Agreement per theme (by test-set label)
+## What changed between v1 and v2
+All 28 v1 disagreements were reviewed (`issue25_disagreement_review.csv`). The main problem was broken apps being labelled `too_rigid`, so the theme descriptions in `etl/complaint_themes.py` were made clearer.
 
-| my_label | my_reviews | jev_agrees | agreement |
-|---|---|---|---|
-| pricing | 13 | 13 | 1.0 |
-| bugs_crashes | 8 | 7 | 0.88 |
-| other | 7 | 7 | 1.0 |
-| onboarding | 2 | 2 | 1.0 |
-| sync | 2 | 2 | 1.0 |
-| too_easy_to_bypass | 2 | 2 | 1.0 |
-| missing_feature | 1 | 0 | 0.0 |
-| too_rigid | 1 | 1 | 1.0 |
+## How far to trust these numbers
+- The descriptions were improved using the same reviews they were then tested on, so v2 is likely a bit optimistic.
+- The competitor-only run has just 36 reviews, and some themes have only 1 or 2.
+- A fresh test set is needed to confirm the result.
 
-## Confusion table (rows = test-set label, columns = Jev)
-
-| my_label | bugs_crashes | onboarding | other | pricing | sync | too_easy_to_bypass | too_rigid |
-|---|---|---|---|---|---|---|---|
-| bugs_crashes | 7 | 0 | 0 | 0 | 0 | 0 | 1 |
-| missing_feature | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
-| onboarding | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
-| other | 0 | 0 | 7 | 0 | 0 | 0 | 0 |
-| pricing | 0 | 0 | 0 | 13 | 0 | 0 | 0 |
-| sync | 0 | 0 | 0 | 0 | 2 | 0 | 0 |
-| too_easy_to_bypass | 0 | 0 | 0 | 0 | 0 | 2 | 0 |
-| too_rigid | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
-
-All 2 disagreements are in `issue25_disagreements.csv`, most confident first.
+## Files
+- `issue25_test_set.csv`: the current 36 competitor reviews; `issue25_test_set_v1_all_apps.csv`: the original 100
+- `issue25_jev_results.csv`: Jev's v2 answers; `issue25_jev_results_v1.csv`: Jev's v1 answers
+- `issue25_disagreements.csv`: the 2 disagreements in the competitor-only run

@@ -1,4 +1,4 @@
-# scripts/make_issue25_test_set.py
+# data/labels/make_issue25_test_set.py
 # =====================================================================
 # Make a test set of bad reviews to label by hand   (issue #25)
 # =====================================================================
@@ -9,8 +9,8 @@
 #   all the other reviews. Your labels are the "answer key".
 #
 # HOW TO RUN IT (from the project folder):
-#   .venv/bin/python scripts/make_issue25_test_set.py
-#   .venv/bin/python scripts/make_issue25_test_set.py --n 50     # a different size
+#   .venv/bin/python data/labels/make_issue25_test_set.py
+#   .venv/bin/python data/labels/make_issue25_test_set.py --n 50     # a different size
 #
 # SAFE: it never overwrites a test set you've already started labelling,
 # unless you add --force.
@@ -28,9 +28,9 @@ import pandas as pd
 # ---------------------------------------------------------------------
 # Work out the project folder from where THIS file is, so the script
 # works no matter which folder you run it from.
-#   __file__            = .../automated-app-analysis-system/scripts/make_issue25_test_set.py
-#   .parents[1]         = .../automated-app-analysis-system
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+#   __file__            = .../automated-app-analysis-system/data/labels/make_issue25_test_set.py
+#   .parents[2]         = .../automated-app-analysis-system
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Let this script import from the project's own folders (e.g. etl/).
 sys.path.insert(0, str(PROJECT_ROOT))

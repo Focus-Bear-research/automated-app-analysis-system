@@ -41,7 +41,6 @@ LABELS_DIR = PROJECT_ROOT / "data" / "labels"
 
 TEST_SET_CSV = LABELS_DIR / "issue25_test_set.csv"        # your hand labels (input)
 RESULTS_CSV = LABELS_DIR / "issue25_jev_results.csv"      # Jev's answers (output, also the cache)
-REPORT_MD = LABELS_DIR / "issue25_agreement_report.md"    # the summary for Jeremy (output)
 
 
 
@@ -52,7 +51,7 @@ SAVE_EVERY = 10
 def load_test_set() -> pd.DataFrame:
     """Read the hand labels and stop with a clear message if anything is wrong."""
     if not TEST_SET_CSV.exists():
-        sys.exit(f"Can't find {TEST_SET_CSV}. Run scripts/make_issue25_test_set.py and label it first.")
+        sys.exit(f"Can't find {TEST_SET_CSV}. Run data/labels/make_issue25_test_set.py and label it first.")
 
     # keep_default_na=False: read empty cells as "" instead of NaN.
     df = pd.read_csv(TEST_SET_CSV, dtype=str, keep_default_na=False)
@@ -216,11 +215,12 @@ def main():
     jev = ask_jev(df)
 
     report = compare(df, jev)
-    REPORT_MD.write_text(report + "\n")
     print()
     print(report)
     print()
-    print(f"Saved: {RESULTS_CSV.name}, {REPORT_MD.name}, issue25_disagreements.csv (in {LABELS_DIR})")
+    # The report is only printed. Results worth keeping go by hand into the one
+    # summary, data/labels/issue25_agreement_report.md, so a re-run can't overwrite it.
+    print(f"Saved: {RESULTS_CSV.name}, issue25_disagreements.csv (in {LABELS_DIR})")
 
 
 if __name__ == "__main__":
