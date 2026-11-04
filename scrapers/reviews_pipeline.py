@@ -381,6 +381,53 @@ def fetch_ios_reviews(app_id: str, country: str, lang: str, max_per_app: int) ->
         time.sleep(0.25)
     return rows
 
+# ------------------ fetching with retries ------------------
+# Both stores can fail in two quite different ways, and until now the pipeline
+# treated both of them as "this app simply has no reviews" and moved on:
+#   * a network or DNS blip raises an exception, which was logged once and the
+#     app was then skipped for the rest of the run
+#   * Google Play throttles by returning an EMPTY list instead of raising, so a
+#     rate-limited app looked exactly like an app with no reviews
+# Either way the run still finished by printing [DONE], which meant a partial
+# scrape was indistinguishable from a complete one. During the neurodivergent
+# review collection this silently skipped 259 of 336 Play apps, and re-fetching
+# them added about 3,500 ND reviews. So we now retry with a growing wait and
+# report anything we still could not get.
+
+def fetch_reviews_with_retry(store: str, app_id: str, country: str, lang: str, max_per_app: int,
+                             retries: int = 4, base_wait: float = 30.0) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+    """Fetch one app's reviews, retrying failures that look temporary.
+
+    Returns (rows, reason). reason is None when the fetch is trustworthy,
+    otherwise it is a short explanation of why this app has no reviews.
+    """
+    wait = base_wait
+    reason = "not attempted"
+    for attempt in range(1, retries + 1):
+        try:
+            if store == "PlayStore":
+                rows = fetch_play_reviews(app_id, lang, country, max_per_app)
+            elif store == "AppStore":
+                rows = fetch_ios_reviews(app_id, country, lang, max_per_app)
+            else:
+                return [], "store not supported"
+            if rows:
+                return rows, None
+            # An empty response is ambiguous. On Play it almost always means
+            # throttling, so it is worth waiting and asking again. On the App
+            # Store an app genuinely can have no reviews in a given country.
+            if store != "PlayStore":
+                return [], None
+            reason = "empty response (likely rate limited)"
+        except Exception as e:
+            reason = f"{type(e).__name__}: {e}"
+        if attempt < retries:
+            print(f"[RETRY] {store} {app_id} ({country}/{lang}) attempt {attempt}/{retries}: "
+                  f"{reason} - waiting {wait:.0f}s", file=sys.stderr)
+            time.sleep(wait)
+            wait *= 2
+    return [], reason
+
 # ------------------ runner ------------------
 
 def filter_items_by_store(items: List[Dict[str, Any]], target: str) -> List[Dict[str, Any]]:
@@ -388,7 +435,9 @@ def filter_items_by_store(items: List[Dict[str, Any]], target: str) -> List[Dict
 
 def run_reviews_to_csv(dump_path: str, out_csv: str, stores: List[str], countries: List[str], langs: List[str],
                        max_per_app: int, since_days: int, flush_every: int,
-                       dedupe_scope: str = "global", overwrite: bool = False):
+                       dedupe_scope: str = "global", overwrite: bool = False,
+                       retries: int = 4, retry_wait: float = 30.0,
+                       skip_report: Optional[str] = None):
     dump = Path(dump_path)
     out = Path(out_csv)
 
@@ -479,26 +528,50 @@ def run_reviews_to_csv(dump_path: str, out_csv: str, stores: List[str], countrie
         elif s == "cws":
             pbar_items += [("ChromeWS", it["id"], it.get("title", "")) for it in by_store["ChromeWS"]]
 
+    # Keep a record of every fetch we could not complete, so the end of the run
+    # can say how much of the data is actually here.
+    skipped: List[Dict[str, str]] = []
+    attempted = 0
+    completed = 0
+
     for store, app_id, title in tqdm(pbar_items, desc="Apps", unit="app"):
         for cc in countries:
             for lg in langs:
-                try:
-                    if store == "PlayStore":
-                        rows = fetch_play_reviews(app_id, lg, cc, max_per_app)
-                    elif store == "AppStore":
-                        rows = fetch_ios_reviews(app_id, cc, lg, max_per_app)
-                    else:
-                        rows = []
-                    batch.extend(rows)
-                    if len(batch) >= flush_every:
-                        maybe_flush()
-                except Exception as e:
-                    print(f"[WARN] {store} {app_id} ({cc}/{lg}): {e}", file=sys.stderr)
-                    time.sleep(0.4)
+                attempted += 1
+                rows, reason = fetch_reviews_with_retry(
+                    store, app_id, cc, lg, max_per_app,
+                    retries=retries, base_wait=retry_wait,
+                )
+                if reason:
+                    skipped.append({"store": store, "app_id": app_id,
+                                    "country": cc, "lang": lg, "reason": reason})
+                    print(f"[WARN] gave up on {store} {app_id} ({cc}/{lg}): {reason}",
+                          file=sys.stderr)
                     continue
+                completed += 1
+                batch.extend(rows)
+                if len(batch) >= flush_every:
+                    maybe_flush()
 
     maybe_flush()
+
+    # Always say how complete the run was. [DONE] on its own used to appear even
+    # when most of the apps had been skipped.
     print(f"[DONE] appended reviews -> {out}")
+    print(f"[SUMMARY] {completed}/{attempted} app/country/language fetches completed")
+    if skipped:
+        print(f"[SUMMARY] {len(skipped)} fetches returned nothing after {retries} tries "
+              f"- THIS SCRAPE IS INCOMPLETE")
+        if skip_report:
+            rp = Path(skip_report)
+            rp.parent.mkdir(parents=True, exist_ok=True)
+            with rp.open("w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=["store", "app_id", "country", "lang", "reason"])
+                w.writeheader()
+                w.writerows(skipped)
+            print(f"[SUMMARY] skipped apps listed in {rp} - re-run those before using the data")
+    else:
+        print("[SUMMARY] no apps were skipped")
 
 def main():
     ap = argparse.ArgumentParser(description="Review scraper pipeline (global de-dup by ID+TEXT)")
@@ -512,7 +585,16 @@ def main():
     p_all.add_argument("--countries", default="au,us,gb", help="comma list of country codes")
     p_all.add_argument("--langs", default="en", help="comma list of languages")
     p_all.add_argument("--max-per-app", type=int, default=2000)
-    p_all.add_argument("--since-days", type=int, default=1095)
+    # Was 1095 (three years), which quietly threw away every older review on
+    # every run that did not override it. Default to keeping everything.
+    p_all.add_argument("--since-days", type=int, default=0,
+                       help="drop reviews older than N days; 0 (default) keeps all of them")
+    p_all.add_argument("--retries", type=int, default=4,
+                       help="attempts per app before giving up (default 4)")
+    p_all.add_argument("--retry-wait", type=float, default=30.0,
+                       help="seconds before the first retry, doubling each time (default 30)")
+    p_all.add_argument("--skip-report", default="data/curated/skipped_fetches.csv",
+                       help="where to list apps that could not be fetched")
     p_all.add_argument("--flush-every", type=int, default=200)
     p_all.add_argument("--dedupe-scope", choices=["country","global"], default="global",
                        help="global (default) removes cross-country duplicates by text")
@@ -527,7 +609,9 @@ def main():
         run_reviews_to_csv(
             args.inp, args.out_csv, stores, countries, langs,
             args.max_per_app, args.since_days, args.flush_every,
-            dedupe_scope=args.dedupe_scope, overwrite=args.overwrite
+            dedupe_scope=args.dedupe_scope, overwrite=args.overwrite,
+            retries=args.retries, retry_wait=args.retry_wait,
+            skip_report=args.skip_report,
         )
 
 if __name__ == "__main__":
