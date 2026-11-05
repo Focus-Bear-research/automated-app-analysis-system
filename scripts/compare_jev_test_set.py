@@ -1,6 +1,6 @@
 # scripts/compare_jev_test_set.py
 # =====================================================================
-# Run Jev on the hand-labelled test set and measure agreement   (issue #25)
+# Run Jev on the labelled test set and measure agreement   (complaint analysis)
 # =====================================================================
 # WHAT IS THIS FOR?
 #   Jeremy: "label a test set of reviews manually before doing any Jev
@@ -39,8 +39,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from etl.complaint_themes import JEV_MODEL, QUESTION, THEMES  # noqa: E402
 LABELS_DIR = PROJECT_ROOT / "data" / "labels"
 
-TEST_SET_CSV = LABELS_DIR / "issue25_test_set.csv"        # your hand labels (input)
-RESULTS_CSV = LABELS_DIR / "issue25_jev_results.csv"      # Jev's answers (output, also the cache)
+TEST_SET_CSV = LABELS_DIR / "complaint_analysis_test_set.csv"        # the test-set labels (input)
+RESULTS_CSV = LABELS_DIR / "complaint_analysis_jev_results.csv"      # Jev's answers (output, also the cache)
 
 
 
@@ -51,7 +51,7 @@ SAVE_EVERY = 10
 def load_test_set() -> pd.DataFrame:
     """Read the hand labels and stop with a clear message if anything is wrong."""
     if not TEST_SET_CSV.exists():
-        sys.exit(f"Can't find {TEST_SET_CSV}. Run data/labels/make_issue25_test_set.py and label it first.")
+        sys.exit(f"Can't find {TEST_SET_CSV}. Run data/labels/make_complaint_analysis_test_set.py and label it first.")
 
     # keep_default_na=False: read empty cells as "" instead of NaN.
     df = pd.read_csv(TEST_SET_CSV, dtype=str, keep_default_na=False)
@@ -177,10 +177,10 @@ def compare(df: pd.DataFrame, jev: pd.DataFrame) -> str:
     disagreements = m.loc[~m["agree"], ["review_id", "app_key", "my_label", "jev_label",
                                         "jev_confidence", "notes", "body"]]
     disagreements = disagreements.sort_values("jev_confidence", ascending=False)
-    disagreements.to_csv(LABELS_DIR / "issue25_disagreements.csv", index=False)
+    disagreements.to_csv(LABELS_DIR / "complaint_analysis_disagreements.csv", index=False)
 
     lines = [
-        "# Issue #25 – Jev vs test-set labels",
+        "# Complaint analysis – Jev vs test-set labels",
         "",
         f"_Run on {date.today():%d %b %Y} · model `{', '.join(sorted(jev['jev_model'].dropna().unique()))}` · {n} reviews_",
         "",
@@ -203,7 +203,7 @@ def compare(df: pd.DataFrame, jev: pd.DataFrame) -> str:
         "",
         to_markdown(confusion),
         "",
-        f"All {len(disagreements)} disagreements are in `issue25_disagreements.csv`, most confident first.",
+        f"All {len(disagreements)} disagreements are in `complaint_analysis_disagreements.csv`, most confident first.",
     ]
     return "\n".join(lines)
 
@@ -219,8 +219,8 @@ def main():
     print(report)
     print()
     # The report is only printed. Results worth keeping go by hand into the one
-    # summary, data/labels/issue25_agreement_report.md, so a re-run can't overwrite it.
-    print(f"Saved: {RESULTS_CSV.name}, issue25_disagreements.csv (in {LABELS_DIR})")
+    # summary, data/labels/complaint_analysis_agreement_report.md, so a re-run can't overwrite it.
+    print(f"Saved: {RESULTS_CSV.name}, complaint_analysis_disagreements.csv (in {LABELS_DIR})")
 
 
 if __name__ == "__main__":

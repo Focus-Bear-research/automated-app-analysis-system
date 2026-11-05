@@ -108,7 +108,7 @@ div[role='radiogroup'] label[data-selected="true"] p {
 # -----------------------------------------------------------
 # SIDEBAR
 # -----------------------------------------------------------
-# Page name used by both the menu and the page check below (issue #25),
+# Page name used by both the menu and the page check below (complaint analysis),
 # so the two can never get out of step.
 PAGE_WHY_USERS_LEAVE = "Why Users Leave Competitors"
 
@@ -1352,7 +1352,7 @@ elif menu == "Summary":
 
 
 # -----------------------------------------------------------
-# WHY USERS LEAVE COMPETITORS   (issue #25)
+# WHY USERS LEAVE COMPETITORS   (complaint analysis)
 # -----------------------------------------------------------
 # Reads competitor_complaints_summary.csv, made by
 # scripts/analyze_competitor_complaints.py: one row per app + complaint

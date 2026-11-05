@@ -23,7 +23,7 @@ ios_ids:
 #   - idXXXXXXXXX
 
 # ---------------------------------------------------------------------
-# Apps to EXCLUDE (issue #25)
+# Apps to EXCLUDE (complaint analysis)
 # ---------------------------------------------------------------------
 # These apps are not Focus Bear competitors, so they are left out of the
 # review scraping (scrapers/reviews_pipeline.py) and the competitor

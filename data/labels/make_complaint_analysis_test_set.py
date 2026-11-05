@@ -1,6 +1,6 @@
-# data/labels/make_issue25_test_set.py
+# data/labels/make_complaint_analysis_test_set.py
 # =====================================================================
-# Make a test set of bad reviews to label by hand   (issue #25)
+# Make a test set of bad reviews to label by hand   (complaint analysis)
 # =====================================================================
 # WHAT IS THIS FOR?
 #   Before we let Jev (the AI) sort reviews into complaint themes, a
@@ -9,8 +9,8 @@
 #   all the other reviews. Your labels are the "answer key".
 #
 # HOW TO RUN IT (from the project folder):
-#   .venv/bin/python data/labels/make_issue25_test_set.py
-#   .venv/bin/python data/labels/make_issue25_test_set.py --n 50     # a different size
+#   .venv/bin/python data/labels/make_complaint_analysis_test_set.py
+#   .venv/bin/python data/labels/make_complaint_analysis_test_set.py --n 50     # a different size
 #
 # SAFE: it never overwrites a test set you've already started labelling,
 # unless you add --force.
@@ -28,20 +28,20 @@ import pandas as pd
 # ---------------------------------------------------------------------
 # Work out the project folder from where THIS file is, so the script
 # works no matter which folder you run it from.
-#   __file__            = .../automated-app-analysis-system/data/labels/make_issue25_test_set.py
+#   __file__            = .../automated-app-analysis-system/data/labels/make_complaint_analysis_test_set.py
 #   .parents[2]         = .../automated-app-analysis-system
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Let this script import from the project's own folders (e.g. etl/).
 sys.path.insert(0, str(PROJECT_ROOT))
-from etl.review_filters import filter_reviews  # noqa: E402  (issue #25: no app_key / excluded apps)
+from etl.review_filters import filter_reviews  # noqa: E402  (no app_key / excluded apps)
 
 # Same idea as app.py: you can point the script at other data with the
 # CURATED_DIR environment variable. Normally it's data/curated.
 CURATED_DIR = Path(os.environ.get("CURATED_DIR", PROJECT_ROOT / "data" / "curated"))
 
 REVIEWS_CSV = CURATED_DIR / "reviews.csv"
-OUT_CSV = PROJECT_ROOT / "data" / "labels" / "issue25_test_set.csv"
+OUT_CSV = PROJECT_ROOT / "data" / "labels" / "complaint_analysis_test_set.csv"
 
 # The themes you choose from when labelling (agreed with Jeremy, 22 Oct).
 THEMES = [
@@ -65,7 +65,7 @@ def main():
     # -----------------------------------------------------------------
     # 1. Read the options typed after the script name
     # -----------------------------------------------------------------
-    parser = argparse.ArgumentParser(description="Make a hand-labelling test set for issue #25.")
+    parser = argparse.ArgumentParser(description="Make a labelling test set for the complaint analysis.")
     parser.add_argument("--n", type=int, default=100, help="how many reviews to pick (default 100)")
     parser.add_argument("--force", action="store_true", help="overwrite an existing test set")
     args = parser.parse_args()
