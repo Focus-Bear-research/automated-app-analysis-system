@@ -35,6 +35,8 @@ from etl.complaint_themes import THEMES  # noqa: E402  (same themes Jev chooses 
 LABELS_DIR = PROJECT_ROOT / "data" / "labels"
 TEST_SET_CSV = LABELS_DIR / "issue31_test_set.csv"
 OUT_XLSX = LABELS_DIR / "issue31_test_set_labelling.xlsx"
+RETEST_CSV = LABELS_DIR / "issue31_retest_set.csv"
+RETEST_XLSX = LABELS_DIR / "issue31_retest_labelling.xlsx"
 
 SENTIMENTS = ["positive", "neutral", "negative"]
 
@@ -152,7 +154,11 @@ def build_help_sheet(sheet):
         ("Yellow cells", "Fill these in. Click the cell, then pick from the arrow that appears."),
         ("Grey cells", "Leave blank. 3-5 star reviews only need a sentiment."),
         ("my_theme", "The reviewer's MAIN complaint. If there are several, pick the one they write the most about or are angriest about."),
+        ("Telling themes apart", "Paying, paywalls and hidden prices: pricing. App stuck or login failing: bugs_crashes. Long or confusing setup: onboarding. Blocking or limits not working, for any reason: too_easy_to_bypass."),
         ("my_sentiment", "How the review reads overall. Go by the words, not the star rating."),
+        ("positive", "Only praise, with no clear complaint or request."),
+        ("neutral", "Both clear praise and a clear complaint or request. Also a description, question or request with no opinion either way."),
+        ("negative", "Mainly complaints, even if they briefly say something nice."),
         ("lang_ok", 'Pick "no" only if the review is not in the language shown in detected_lang.'),
         ("notes", "Optional. Anything you weren't sure about."),
         ("body_en", "An AI translation to help you read the review. Check the original if something seems off."),
@@ -182,18 +188,22 @@ def build_help_sheet(sheet):
 def main():
     parser = argparse.ArgumentParser(description="Make the labelling sheet for issue #31.")
     parser.add_argument("--force", action="store_true", help="overwrite an existing sheet")
+    parser.add_argument("--retest", action="store_true", help="make the sheet for the retest set")
     args = parser.parse_args()
 
+    test_set_csv = RETEST_CSV if args.retest else TEST_SET_CSV
+    out_xlsx = RETEST_XLSX if args.retest else OUT_XLSX
+
     # Don't destroy hand labels by accident.
-    if OUT_XLSX.exists() and not args.force:
-        sys.exit(f"{OUT_XLSX} already exists. Not overwriting your labels. "
+    if out_xlsx.exists() and not args.force:
+        sys.exit(f"{out_xlsx} already exists. Not overwriting your labels. "
                  f"Use --force if you really want a new one.")
 
-    if not TEST_SET_CSV.exists():
-        sys.exit(f"Can't find {TEST_SET_CSV}. Run data/labels/make_issue31_test_set.py first.")
+    if not test_set_csv.exists():
+        sys.exit(f"Can't find {test_set_csv}. Make the test set first.")
 
     # keep_default_na=False: read empty cells as "" instead of NaN.
-    df = pd.read_csv(TEST_SET_CSV, encoding="utf-8-sig", dtype=str, keep_default_na=False)
+    df = pd.read_csv(test_set_csv, encoding="utf-8-sig", dtype=str, keep_default_na=False)
     df.insert(0, "no", [str(i) for i in range(1, len(df) + 1)])
 
     workbook = Workbook()
@@ -202,8 +212,8 @@ def main():
     build_labels_sheet(labels, df)
     build_help_sheet(workbook.create_sheet("How to label"))
 
-    workbook.save(OUT_XLSX)
-    print(f"Saved {len(df)} reviews to {OUT_XLSX}")
+    workbook.save(out_xlsx)
+    print(f"Saved {len(df)} reviews to {out_xlsx}")
 
 
 if __name__ == "__main__":

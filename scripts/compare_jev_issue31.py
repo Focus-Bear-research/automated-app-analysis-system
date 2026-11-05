@@ -90,13 +90,13 @@ RESULT_COLUMNS = [
 ]
 
 
-def load_labels() -> pd.DataFrame:
+def load_labels(path: Path = LABELS_XLSX) -> pd.DataFrame:
     """Read the hand labels and stop with a clear message if anything is wrong."""
-    if not LABELS_XLSX.exists():
-        sys.exit(f"Can't find {LABELS_XLSX}. Run data/labels/make_issue31_labelling_sheet.py and label it first.")
+    if not path.exists():
+        sys.exit(f"Can't find {path}. Run data/labels/make_issue31_labelling_sheet.py and label it first.")
 
     # keep_default_na=False: read empty cells as "" instead of NaN.
-    df = pd.read_excel(LABELS_XLSX, sheet_name="Labels", dtype=str, keep_default_na=False)
+    df = pd.read_excel(path, sheet_name="Labels", dtype=str, keep_default_na=False)
     for col in ["my_theme", "my_sentiment", "lang_ok"]:
         df[col] = df[col].str.strip()
     df["is_bad"] = df["rating"].astype(int) <= 2
