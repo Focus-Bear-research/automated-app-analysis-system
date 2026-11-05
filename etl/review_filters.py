@@ -1,6 +1,6 @@
 # etl/review_filters.py
 # =====================================================================
-# Shared review filters   (issue #25)
+# Shared review filters   (complaint analysis)
 # =====================================================================
 # WHAT IS THIS FOR?
 #   Jeremy asked for two clean-ups before analysing competitor reviews:

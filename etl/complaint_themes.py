@@ -1,6 +1,6 @@
 # etl/complaint_themes.py
 # =====================================================================
-# Complaint themes and the Jev question   (issue #25)
+# Complaint themes and the Jev question   (complaint analysis)
 # =====================================================================
 # One place for the themes, so the agreement test
 # (scripts/compare_jev_test_set.py) and the full analysis

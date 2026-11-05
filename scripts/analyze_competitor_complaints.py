@@ -1,6 +1,6 @@
 # scripts/analyze_competitor_complaints.py
 # =====================================================================
-# Why do users leave competitors?   (issue #25)
+# Why do users leave competitors?   (complaint analysis)
 # =====================================================================
 # WHAT IT DOES:
 #   1. Takes the bad reviews (1-2 stars) of Focus Bear's competitors.
@@ -192,7 +192,7 @@ def summarise(bad: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Classify competitor complaints with Jev (issue #25).")
+    parser = argparse.ArgumentParser(description="Classify competitor complaints with Jev (complaint analysis).")
     parser.add_argument("--limit", type=int, default=None,
                         help="only classify this many new reviews (cheap test run)")
     parser.add_argument("--concurrency", type=int, default=10,
