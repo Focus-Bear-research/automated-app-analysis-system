@@ -14,6 +14,9 @@ files = [
     'data/curated/reviews_round3.csv',
     'data/curated/reviews_ios.csv',
     'data/curated/reviews_play_retry.csv',
+    # Gunnam's iOS scrape: 129k reviews, 74 apps, 18 countries. Note this is
+    # ios_reviews.csv, NOT the reviews_ios.csv above (which was never run).
+    'data/curated/ios_reviews.csv',
 ]
 
 # Columns the dashboard's ADHD Analysis page needs
