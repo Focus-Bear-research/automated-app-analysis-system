@@ -15,6 +15,9 @@ files = [
     'data/curated/reviews_round3.csv',
     'data/curated/reviews_ios.csv',
     'data/curated/reviews_play_retry.csv',
+    # Gunnam's iOS scrape: 129k reviews, 74 apps, 18 countries. Note this is
+    # ios_reviews.csv, NOT the reviews_ios.csv above (which was never run).
+    'data/curated/ios_reviews.csv',
 ]
 
 print('Loading review files...')
@@ -31,6 +34,20 @@ for f in files:
 all_r = pd.concat(frames, ignore_index=True)
 all_r['title'] = all_r['title'].fillna('')
 all_r['body'] = all_r['body'].fillna('')
+
+# Make review_id text before de-duplicating. Some files store it as a number
+# (ios_reviews.csv) and others as text, and after concat the number
+# 10059510025 and the string '10059510025' look like two different reviews, so
+# the same review survives the de-duplication twice.
+def _norm_review_id(v):
+    if pd.isna(v):
+        return None
+    s = str(v).strip()
+    if s.endswith('.0'):          # a numeric id that pandas read as a float
+        s = s[:-2]
+    return s or None
+
+all_r['review_id'] = all_r['review_id'].map(_norm_review_id)
 
 # Deduplicate: by review_id where available, otherwise by app + review text
 print('\nDeduplicating...')
