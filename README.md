@@ -7,25 +7,47 @@
 
 ## Review dataset
 
-The full scraped review set is far too large for the repo, so it lives in Google Drive:
+The full review set now lives in this repo at `data/curated/reviews.csv.gz`
+(67 MB), stored with Git LFS. You need git-lfs installed to get the real file —
+without it git hands you a small text pointer instead:
 
-**Dataset folder:** https://drive.google.com/drive/folders/1kWmwiv46hKgQQPOsPm71tQ3frs5N1hAy?usp=sharing
+    git lfs install
+    git lfs pull
+
+Read it directly, no need to decompress:
+
+    import pandas as pd
+    df = pd.read_csv('data/curated/reviews.csv.gz')
+
+To skip the 67 MB download when cloning:
+
+    GIT_LFS_SKIP_SMUDGE=1 git clone <url>
 
 | file | rows | what it is |
 |---|---|---|
-| `focusbear_nd_reviews_6186.csv` | 6,186 | only the neurodivergent reviews, with their category labels |
-| `focusbear_all_reviews_801k.csv.gz` | 801,001 | every unique review collected (gzipped; pandas reads it directly) |
-| `README.txt` | - | column descriptions and how the labelling works |
+| `data/curated/reviews.csv.gz` | 801,001 | every unique Play/Chrome review collected, `special_reviews` marks the neurodivergent ones |
+| `data/curated/ios_reviews.csv` | 129,077 | the iOS scrape, 74 apps across 18 countries |
 
-As of 30 Oct 2026 that is 6,186 neurodivergent reviews out of 801,001 unique
-reviews (0.77%), against a target of 5,000. To check those numbers yourself,
-run `python verify_nd_count.py` (produces the count) and then
-`python audit_nd_count.py` (checks it for duplicates and category errors).
+That is 6,186 neurodivergent reviews out of 801,001 in the gzipped set (0.77%).
+Counting the iOS file as well, the verified total is **9,151 neurodivergent
+reviews out of 921,506 unique reviews** (0.99%), against a target of 5,000.
 
-Note that `data/curated/reviews.csv` in the repo is a 112,638-row subset
-carrying 2,210 flagged reviews, because GitHub rejects files over 100 MB. The
-dashboard reports whatever is in that file, so to see the full 6,186 download
-the dataset from the link above and run `python build_dashboard_reviews.py`.
+Confirm the first number straight from the file:
+
+    python -c "import pandas as pd; d=pd.read_csv('data/curated/reviews.csv.gz'); print(len(d), (d['special_reviews']==True).sum())"
+
+For the combined 9,151, run `python verify_nd_count.py` and then
+`python audit_nd_count.py` — note those read the individual per-scrape files,
+which are not in the repo, so they reproduce the number only on a machine that
+ran the scrapes.
+
+`data/curated/reviews.csv` is still the old 112,638-row subset carrying 2,210
+flagged reviews, and the dashboard reports whatever is in that file. To make the
+dashboard show the real count, run `python build_dashboard_reviews.py` after
+pulling LFS.
+
+Mirror, in case the repo's LFS quota is exhausted:
+https://drive.google.com/drive/folders/1kWmwiv46hKgQQPOsPm71tQ3frs5N1hAy?usp=sharing
 
 ## Scraping notes
 
