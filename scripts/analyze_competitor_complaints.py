@@ -39,7 +39,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # Let this script import from the project's own folders (e.g. etl/).
 sys.path.insert(0, str(PROJECT_ROOT))
-from etl.complaint_themes import JEV_MODEL, MIN_CONFIDENCE, QUESTION  # noqa: E402
+from etl.complaint_themes import JEV_MODEL, MIN_CONFIDENCE, PROMPT_VERSION, QUESTION  # noqa: E402
 from etl.review_filters import filter_reviews  # noqa: E402
 
 from typesafe_sdk import AsyncTypeSafeClient, RetryPolicy, TypeSafeError  # noqa: E402
@@ -86,11 +86,26 @@ def load_bad_competitor_reviews() -> pd.DataFrame:
 # ---------------------------------------------------------------------
 # 2. Ask Jev (many reviews at the same time)
 # ---------------------------------------------------------------------
+LABEL_COLUMNS = ["review_id", "jev_label", "jev_confidence", "jev_model", "prompt_version"]
+
+# Fingerprint of the v2 descriptions + jev-1.14.0, which made the committed
+# labels file before it had a prompt_version column.
+LEGACY_PROMPT_VERSION = "56112ff106b3"
+
+
 def load_saved_labels() -> pd.DataFrame:
-    """Answers from earlier runs (the cache). Empty table if there are none."""
-    if LABELS_CSV.exists():
-        return pd.read_csv(LABELS_CSV, dtype={"review_id": str})
-    return pd.DataFrame(columns=["review_id", "jev_label", "jev_confidence", "jev_model"])
+    """Answers from earlier runs (the cache) that were made with the CURRENT
+    question (same PROMPT_VERSION). Answers to an older question are dropped,
+    so they get asked again. Empty table if there are none."""
+    if not LABELS_CSV.exists():
+        return pd.DataFrame(columns=LABEL_COLUMNS)
+    labels = pd.read_csv(LABELS_CSV, dtype={"review_id": str, "prompt_version": str})
+    if "prompt_version" not in labels.columns:
+        labels["prompt_version"] = LEGACY_PROMPT_VERSION
+    stale = labels["prompt_version"] != PROMPT_VERSION
+    if stale.any():
+        print(f"{stale.sum():,} saved answers are from an older question/model; they will be asked again.")
+    return labels[~stale]
 
 
 async def classify(todo: pd.DataFrame, saved: pd.DataFrame, concurrency: int) -> pd.DataFrame:
@@ -132,6 +147,7 @@ async def classify(todo: pd.DataFrame, saved: pd.DataFrame, concurrency: int) ->
                     "jev_label": answer.choice,
                     "jev_confidence": round(answer.confidence, 3),
                     "jev_model": response.model,
+                    "prompt_version": PROMPT_VERSION,
                 })
                 if len(new_rows) % SAVE_EVERY == 0:
                     save()

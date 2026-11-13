@@ -13,6 +13,9 @@
 # scripts/compare_jev_test_set.py to check agreement again.
 # =====================================================================
 
+import hashlib
+import json
+
 from typesafe_sdk import Choice
 
 # Exact Jev model, so results don't change when TypeSafe releases a new one.
@@ -36,10 +39,17 @@ THEMES = {
     "other": "None of the above, e.g. ads, can't uninstall, pop-ups asking for a rating, design, or not really a complaint.",
 }
 
+INSTRUCTIONS = ("This is a negative app store review of a productivity or focus app. "
+                "What is the reviewer's MAIN complaint? If there are several, pick the one "
+                "they write the most about or are angriest about.")
+
 # The question sent to Jev with each review. Jev must pick exactly one label.
-QUESTION = Choice(
-    instructions="This is a negative app store review of a productivity or focus app. "
-                 "What is the reviewer's MAIN complaint? If there are several, pick the one "
-                 "they write the most about or are angriest about.",
-    criteria=THEMES,
-)
+QUESTION = Choice(instructions=INSTRUCTIONS, criteria=THEMES)
+
+# Short fingerprint of the model + question. Both scripts store it next to
+# each cached answer and only reuse answers with the same fingerprint, so
+# editing a description or the model re-asks Jev instead of silently
+# reusing answers to the old question.
+PROMPT_VERSION = hashlib.sha256(
+    json.dumps([JEV_MODEL, INSTRUCTIONS, THEMES], sort_keys=True).encode()
+).hexdigest()[:12]

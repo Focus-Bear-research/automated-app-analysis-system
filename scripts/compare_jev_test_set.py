@@ -36,7 +36,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 # Themes, the Jev question and the model live in one shared file, so this
 # test and the full analysis always ask Jev exactly the same thing.
-from etl.complaint_themes import JEV_MODEL, QUESTION, THEMES  # noqa: E402
+from etl.complaint_themes import JEV_MODEL, PROMPT_VERSION, QUESTION, THEMES  # noqa: E402
 LABELS_DIR = PROJECT_ROOT / "data" / "labels"
 
 TEST_SET_CSV = LABELS_DIR / "complaint_analysis_test_set.csv"        # the test-set labels (input)
@@ -71,10 +71,18 @@ def load_test_set() -> pd.DataFrame:
 def ask_jev(df: pd.DataFrame) -> pd.DataFrame:
     """Send every review Jev hasn't answered yet. Returns all of Jev's answers."""
     # Load answers from an earlier run, if there is one (the "cache").
+    # Only answers to the CURRENT question count: after editing a theme
+    # description, every review is asked again instead of reusing old answers.
     if RESULTS_CSV.exists():
-        done = pd.read_csv(RESULTS_CSV, dtype={"review_id": str})
+        done = pd.read_csv(RESULTS_CSV, dtype={"review_id": str, "prompt_version": str})
+        if "prompt_version" not in done.columns:
+            done["prompt_version"] = ""
+        stale = done["prompt_version"] != PROMPT_VERSION
+        if stale.any():
+            print(f"Ignoring {stale.sum()} saved answers from an older question/model.")
+        done = done[~stale]
     else:
-        done = pd.DataFrame(columns=["review_id", "jev_label", "jev_confidence", "jev_model"])
+        done = pd.DataFrame(columns=["review_id", "jev_label", "jev_confidence", "jev_model", "prompt_version"])
 
     todo = df[~df["review_id"].isin(done["review_id"])]
     print(f"{len(done)} reviews already answered, {len(todo)} to ask Jev about.")
@@ -111,6 +119,7 @@ def ask_jev(df: pd.DataFrame) -> pd.DataFrame:
                 "jev_label": answer.choice,
                 "jev_confidence": round(answer.confidence, 3),
                 "jev_model": response.model,
+                "prompt_version": PROMPT_VERSION,
             })
             print(f"  {i:>3}/{len(todo)}  {answer.choice:<20} {answer.confidence:.2f}")
 
