@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 venv/
+
+# Made by scripts/compare_jev_test_set.py. Re-run it to get them back.
+data/labels/complaint_analysis_jev_results.csv
+data/labels/complaint_analysis_disagreements.csv
